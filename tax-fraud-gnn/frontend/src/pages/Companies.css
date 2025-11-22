@@ -1,0 +1,96 @@
+.companies-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 30px;
+}
+
+.page-header {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 3px solid;
+  border-image: linear-gradient(90deg, var(--forsythia), var(--deep-saffron)) 1;
+}
+
+.page-header h2 {
+  font-size: 36px;
+  color: var(--oceanic-noir);
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.page-header p {
+  color: var(--nocturnal-expedition);
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-box {
+  background: var(--card-bg);
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(17, 76, 90, 0.1);
+  border-left: 4px solid var(--nocturnal-expedition);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+  box-shadow: 0 6px 20px rgba(17, 76, 90, 0.15);
+}
+
+.stat-box.stat-high-risk {
+  border-left-color: var(--deep-saffron);
+}
+
+.stat-box.stat-medium-risk {
+  border-left-color: var(--forsythia);
+}
+
+.stat-box.stat-low-risk {
+  border-left-color: var(--nocturnal-expedition);
+}
+
+.stat-label {
+  display: block;
+  color: var(--nocturnal-expedition);
+  font-size: 12px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.stat-value {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--nocturnal-expedition) 0%, var(--oceanic-noir) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@media (max-width: 768px) {
+  .companies-page {
+    padding: 20px 15px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+
+  .page-header h2 {
+    font-size: 28px;
+  }
+}
+

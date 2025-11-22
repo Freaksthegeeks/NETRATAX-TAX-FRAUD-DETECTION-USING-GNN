@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NETRA TAX - Fraud Detection Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <h1>🚨 NETRA TAX</h1>
+                <p>AI-Powered Tax Fraud Detection</p>
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="index.html" class="nav-link active">Dashboard</a></li>
+                <li><a href="upload.html" class="nav-link">Upload</a></li>
+                <li><a href="company-explorer.html" class="nav-link">Companies</a></li>
+                <li><a href="invoice-explorer.html" class="nav-link">Invoices</a></li>
+                <li><a href="graph-visualizer.html" class="nav-link">Network Graph</a></li>
+                <li><a href="reports.html" class="nav-link">Reports</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-user"></i> <span id="userDisplay">Admin</span>
+                    </a>
+                    <div class="dropdown-menu">
+                        <a href="#" onclick="viewProfile()">My Profile</a>
+                        <a href="#" onclick="changePassword()">Change Password</a>
+                        <a href="#" onclick="logout()">Logout</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h2>📊 Fraud Detection Dashboard</h2>
+                <p>Real-time analysis using Graph Neural Networks</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="refreshData()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+                <button class="btn btn-primary" onclick="window.location.href='upload.html'">
+                    <i class="fas fa-upload"></i> Upload Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Key Metrics Row -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">📊</div>
+                <div class="metric-content">
+                    <div class="metric-label">Total Entities Scanned</div>
+                    <div class="metric-value" id="totalEntities">0</div>
+                    <div class="metric-change">+12.5% this month</div>
+                </div>
+            </div>
+
+            <div class="metric-card metric-high-risk">
+                <div class="metric-icon">🔴</div>
+                <div class="metric-content">
+                    <div class="metric-label">High-Risk Entities</div>
+                    <div class="metric-value" id="highRiskCount">0</div>
+                    <div class="metric-change">Require immediate action</div>
+                </div>
+            </div>
+
+            <div class="metric-card metric-medium-risk">
+                <div class="metric-icon">🟡</div>
+                <div class="metric-content">
+                    <div class="metric-label">Medium-Risk Entities</div>
+                    <div class="metric-value" id="mediumRiskCount">0</div>
+                    <div class="metric-change">Under monitoring</div>
+                </div>
+            </div>
+
+            <div class="metric-card metric-fraud-rings">
+                <div class="metric-icon">🔗</div>
+                <div class="metric-content">
+                    <div class="metric-label">Fraud Rings Detected</div>
+                    <div class="metric-value" id="fraudRingCount">0</div>
+                    <div class="metric-change">Active investigations</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Risk Level Distribution</h3>
+                        <button class="chart-options" onclick="toggleChartOptions(this)">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                    <div id="riskDistributionChart" class="chart-container"></div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Fraud Score Distribution</h3>
+                        <button class="chart-options" onclick="toggleChartOptions(this)">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                    <div id="fraudScoreChart" class="chart-container"></div>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <h3>Fraud Trends Over Time</h3>
+                        <div class="chart-filters">
+                            <select id="trendFilter">
+                                <option>Last 30 Days</option>
+                                <option>Last 90 Days</option>
+                                <option>Last Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="trendChart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts & Notifications -->
+        <div class="alerts-section">
+            <div class="section-header">
+                <h3>🚨 Recent Alerts</h3>
+                <a href="#" class="view-all">View All →</a>
+            </div>
+            <div id="alertsList" class="alerts-grid">
+                <div class="alert-item alert-high">
+                    <div class="alert-icon">⚠️</div>
+                    <div class="alert-content">
+                        <div class="alert-title">Circular Trading Ring Detected</div>
+                        <div class="alert-description">5 entities involved in circular trading loop</div>
+                        <div class="alert-time">2 hours ago</div>
+                    </div>
+                    <button class="btn-small" onclick="investigateAlert(this)">Investigate</button>
+                </div>
+
+                <div class="alert-item alert-medium">
+                    <div class="alert-icon">⏰</div>
+                    <div class="alert-content">
+                        <div class="alert-title">Unusual Transaction Spike</div>
+                        <div class="alert-description">Company XYZ showed 250% increase in invoices</div>
+                        <div class="alert-time">4 hours ago</div>
+                    </div>
+                    <button class="btn-small" onclick="investigateAlert(this)">Investigate</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Entities Table -->
+        <div class="table-section">
+            <div class="section-header">
+                <h3>🔝 Top High-Risk Companies</h3>
+                <a href="company-explorer.html" class="view-all">View All →</a>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>GSTIN</th>
+                        <th>Company Name</th>
+                        <th>Risk Score</th>
+                        <th>Risk Level</th>
+                        <th>Invoices</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="topCompaniesTable">
+                    <tr>
+                        <td colspan="6" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- System Health -->
+        <div class="system-health">
+            <h3>System Status</h3>
+            <div class="health-grid">
+                <div class="health-item">
+                    <div class="health-indicator online"></div>
+                    <span>API Server</span>
+                    <span class="status">Online</span>
+                </div>
+                <div class="health-item">
+                    <div class="health-indicator online"></div>
+                    <span>Database</span>
+                    <span class="status">Connected</span>
+                </div>
+                <div class="health-item">
+                    <div class="health-indicator online"></div>
+                    <span>GNN Model</span>
+                    <span class="status">Ready</span>
+                </div>
+                <div class="health-item">
+                    <div class="health-indicator online"></div>
+                    <span>Last Update</span>
+                    <span class="status" id="lastUpdate">Just now</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 NETRA TAX | Government-Grade Fraud Detection System</p>
+    </footer>
+
+    <!-- Modal for Full-Screen Chart -->
+    <div id="chartModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeChartModal()">&times;</span>
+            <div id="modalChart"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showNotification('Error loading dashboard data', 'error');
+            }
+        }
+
+
+</body>
+</html>

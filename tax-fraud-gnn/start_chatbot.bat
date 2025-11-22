@@ -1,0 +1,3 @@
+@echo off
+echo Starting GST Fraud Detection Chatbot...
+streamlit run chatbot.py

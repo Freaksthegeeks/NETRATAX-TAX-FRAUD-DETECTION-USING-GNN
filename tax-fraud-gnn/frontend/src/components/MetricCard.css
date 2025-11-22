@@ -1,0 +1,88 @@
+.metric-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 30px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(17, 76, 90, 0.1);
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  border-color: var(--forsythia);
+}
+
+.metric-card-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  z-index: 1;
+}
+
+.metric-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.metric-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.metric-value {
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--oceanic-noir);
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--nocturnal-expedition) 0%, var(--oceanic-noir) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.metric-label {
+  font-size: 14px;
+  color: var(--nocturnal-expedition);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.metric-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .metric-card {
+    padding: 25px;
+  }
+
+  .metric-value {
+    font-size: 36px;
+  }
+
+  .metric-icon {
+    font-size: 40px;
+  }
+}
+

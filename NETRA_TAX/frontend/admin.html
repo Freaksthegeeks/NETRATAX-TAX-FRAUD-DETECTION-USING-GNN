@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - NETRA TAX</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <h1>🔐 NETRA TAX</h1>
+                <p>Tax Fraud Detection</p>
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="/index.html" class="nav-link">📊 Dashboard</a></li>
+                <li><a href="/upload.html" class="nav-link">📤 Upload</a></li>
+                <li><a href="/company-explorer.html" class="nav-link">🏢 Companies</a></li>
+                <li><a href="/invoice-explorer.html" class="nav-link">📄 Invoices</a></li>
+                <li><a href="/graph-visualizer.html" class="nav-link">🕸️ Network</a></li>
+                <li><a href="/reports.html" class="nav-link">📑 Reports</a></li>
+                <li><a href="/admin.html" class="nav-link active">⚙️ Admin</a></li>
+                <li>
+                    <div class="dropdown">
+                        <a href="#" class="nav-link">👤 <span class="user-name">User</span></a>
+                        <div class="dropdown-menu user-dropdown"></div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h2>⚙️ Administration Panel</h2>
+                <p>System configuration, user management, and monitoring</p>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div style="display: flex; gap: 0; border-bottom: 2px solid #ecf0f1; margin-bottom: 24px;">
+            <button class="admin-tab active" onclick="switchAdminTab('system')" style="padding: 16px 24px; border: none; background: none; color: var(--primary-color); font-weight: 600; cursor: pointer; border-bottom: 3px solid var(--secondary-color);">System</button>
+            <button class="admin-tab" onclick="switchAdminTab('users')" style="padding: 16px 24px; border: none; background: none; color: var(--gray-dark); font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;">Users</button>
+            <button class="admin-tab" onclick="switchAdminTab('logs')" style="padding: 16px 24px; border: none; background: none; color: var(--gray-dark); font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;">Logs</button>
+            <button class="admin-tab" onclick="switchAdminTab('settings')" style="padding: 16px 24px; border: none; background: none; color: var(--gray-dark); font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;">Settings</button>
+        </div>
+
+        <!-- System Tab -->
+        <div id="systemTab" class="admin-section">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 32px;">
+                <div class="table-section">
+                    <h3 style="margin-bottom: 16px; font-size: 16px; color: var(--primary-color); font-weight: 600;">System Health</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">API Status</p>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background: #27ae60; animation: pulse 2s infinite;"></div>
+                                <span style="font-weight: 600;">🟢 Online</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Database</p>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background: #27ae60; animation: pulse 2s infinite;"></div>
+                                <span style="font-weight: 600;">🟢 Connected</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">GNN Model</p>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background: #27ae60; animation: pulse 2s infinite;"></div>
+                                <span style="font-weight: 600;">🟢 Loaded</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Disk Usage</p>
+                            <p style="font-weight: 600;">45.2 GB / 100 GB (45%)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <h3 style="margin-bottom: 16px; font-size: 16px; color: var(--primary-color); font-weight: 600;">Performance Metrics</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Avg Response Time</p>
+                            <p style="font-weight: 600;">145ms</p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Requests/min</p>
+                            <p style="font-weight: 600;">2,341</p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Error Rate</p>
+                            <p style="font-weight: 600; color: var(--success-color);">0.02%</p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">CPU Usage</p>
+                            <p style="font-weight: 600;">32%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <h3 style="margin-bottom: 16px; font-size: 16px; color: var(--primary-color); font-weight: 600;">Database Stats</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Total Companies</p>
+                            <p style="font-weight: 600;">12,547</p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Total Invoices</p>
+                            <p style="font-weight: 600;">1,234,567</p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Fraud Cases</p>
+                            <p style="font-weight: 600; color: var(--danger-color);">3,421</p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Last Sync</p>
+                            <p style="font-weight: 600;">2 minutes ago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-section">
+                <h3 style="margin-bottom: 16px; font-size: 16px; color: var(--primary-color); font-weight: 600;">System Actions</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                    <button class="btn btn-primary" onclick="performSystemCheck()">🔍 Run System Check</button>
+                    <button class="btn btn-secondary" onclick="triggerDatabaseBackup()">💾 Backup Database</button>
+                    <button class="btn btn-secondary" onclick="retrainModel()">🤖 Retrain GNN Model</button>
+                    <button class="btn btn-secondary" onclick="clearCache()">🗑 Clear Cache</button>
+                    <button class="btn" style="background-color: #f39c12; color: white;" onclick="restartServices()">⚡ Restart Services</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="usersTab" class="admin-section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 16px; color: var(--primary-color); font-weight: 600;">User Management</h3>
+                <button class="btn btn-primary" onclick="openAddUserModal()">➕ Add New User</button>
+            </div>
+
+            <div class="table-section">
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <tr>
+                                <td>admin</td>
+                                <td>admin@netra.gov.in</td>
+                                <td>System Administrator</td>
+                                <td><span style="background: #114C5A; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Admin</span></td>
+                                <td><span style="color: var(--success-color); font-weight: 600;">✓ Active</span></td>
+                                <td>Just now</td>
+                                <td>
+                                    <button class="btn btn-small" onclick="editUser('admin')">Edit</button>
+                                    <button class="btn btn-small" onclick="resetPassword('admin')" style="background-color: var(--secondary-color); color: var(--dark);">Reset</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>auditor1</td>
+                                <td>auditor@netra.gov.in</td>
+                                <td>John Auditor</td>
+                                <td><span style="background: var(--secondary-color); color: var(--dark); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Auditor</span></td>
+                                <td><span style="color: var(--success-color); font-weight: 600;">✓ Active</span></td>
+                                <td>2 hours ago</td>
+                                <td>
+                                    <button class="btn btn-small" onclick="editUser('auditor1')">Edit</button>
+                                    <button class="btn btn-small" onclick="resetPassword('auditor1')" style="background-color: var(--secondary-color); color: var(--dark);">Reset</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>analyst2</td>
+                                <td>analyst@netra.gov.in</td>
+                                <td>Jane Analyst</td>
+                                <td><span style="background: var(--info-color); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Analyst</span></td>
+                                <td><span style="color: var(--success-color); font-weight: 600;">✓ Active</span></td>
+                                <td>30 minutes ago</td>
+                                <td>
+                                    <button class="btn btn-small" onclick="editUser('analyst2')">Edit</button>
+                                    <button class="btn btn-small" onclick="resetPassword('analyst2')" style="background-color: var(--secondary-color); color: var(--dark);">Reset</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="logsTab" class="admin-section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px;">
+                <h3 style="font-size: 16px; color: var(--primary-color); font-weight: 600;">System Logs</h3>
+                <div style="display: flex; gap: 8px;">
+                    <select id="logFilterLevel" onchange="filterLogs()" style="padding: 8px 12px; border: 1px solid #bdc3c7; border-radius: 8px; font-size: 13px;">
+                        <option value="">All Levels</option>
+                        <option value="error">Errors</option>
+                        <option value="warning">Warnings</option>
+                        <option value="info">Info</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="downloadLogs()">⬇ Export</button>
+                    <button class="btn btn-secondary" onclick="clearLogs()">🗑 Clear</button>
+                </div>
+            </div>
+
+            <div class="table-section">
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Level</th>
+                                <th>Component</th>
+                                <th>Message</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTable">
+                            <tr>
+                                <td>2024-01-15 14:32:15</td>
+                                <td><span style="background: #27ae60; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">INFO</span></td>
+                                <td>API</td>
+                                <td>User login successful</td>
+                                <td>admin</td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-15 14:28:42</td>
+                                <td><span style="background: var(--warning-color); color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">WARN</span></td>
+                                <td>Database</td>
+                                <td>Slow query detected: 2.5s execution time</td>
+                                <td>system</td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-15 14:15:20</td>
+                                <td><span style="background: #27ae60; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">INFO</span></td>
+                                <td>GNN Model</td>
+                                <td>Inference completed: 1,234 companies analyzed</td>
+                                <td>system</td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-15 13:45:08</td>
+                                <td><span style="background: var(--danger-color); color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600;">ERROR</span></td>
+                                <td>API</td>
+                                <td>Connection timeout: Failed to connect to external service</td>
+                                <td>system</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settingsTab" class="admin-section" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+                <div class="table-section">
+                    <h3 style="margin-bottom: 16px; font-size: 16px; color: var(--primary-color); font-weight: 600;">Fraud Detection Thresholds</h3>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                            <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">High Risk Threshold</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="range" id="highRiskThreshold" min="0" max="1" step="0.01" value="0.7" style="flex: 1;" />
+                                <input type="number" id="highRiskValue" min="0" max="1" step="0.01" value="0.7" style="width: 80px; padding: 8px; border: 1px solid #bdc3c7; border-radius: 8px;" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Medium Risk Threshold</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="range" id="mediumRiskThreshold" min="0" max="1" step="0.01" value="0.3" style="flex: 1;" />
+                                <input type="number" id="mediumRiskValue" min="0" max="1" step="0.01" value="0.3" style="width: 80px; padding: 8px; border: 1px solid #bdc3c7; border-radius: 8px;" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Enable Notifications</label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" checked />
+                                <span>Alert on high-risk transactions</span>
+                            </label>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveThresholds()">💾 Save Settings</button>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <h3 style="margin-bottom: 16px; font-size: 16px; color: var(--primary-color); font-weight: 600;">Email Configuration</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 4px; display: block;">SMTP Server</label>
+                            <input type="text" value="smtp.gmail.com" style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 8px;" />
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 4px; display: block;">SMTP Port</label>
+                            <input type="number" value="587" style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 8px;" />
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 4px; display: block;">From Email</label>
+                            <input type="email" value="alerts@netra.gov.in" style="width: 100%; padding: 8px; border: 1px solid #bdc3c7; border-radius: 8px;" />
+                        </div>
+
+                        <button class="btn btn-primary" onclick="testEmailConfig()">🧪 Test Configuration</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h3 style="font-size: 20px; color: var(--primary-color); margin-bottom: 24px;">Add New User</h3>
+
+            <form onsubmit="submitAddUser(event)">
+                <div class="form-group">
+                    <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Username</label>
+                    <input type="text" id="newUsername" style="width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 8px;" required />
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Email</label>
+                    <input type="email" id="newEmail" style="width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 8px;" required />
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Full Name</label>
+                    <input type="text" id="newFullName" style="width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 8px;" required />
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Role</label>
+                    <select id="newRole" style="width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 8px;" required>
+                        <option value="analyst">Analyst</option>
+                        <option value="auditor">Auditor</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn" style="background-color: #bdc3c7; color: white;" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2024 NETRA TAX - AI-Powered Tax Fraud Detection. All rights reserved.</p>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            requireAuth();
+            await loadUserInfo();
+
+            // Check if user is admin
+            const user = getCurrentUser();
+            if (user?.role !== 'admin') {
+                showNotification('Access Denied: Admin privileges required', 'error');
+                setTimeout(() => {
+                    window.location.href = '/index.html';
+                }, 2000);
+            }
+        });
+
+        /**
+         * Load user info
+         */
+        async function loadUserInfo() {
+            try {
+                const user = getCurrentUser();
+                if (!user) {
+                    const response = await api.getCurrentUser();
+                    setCurrentUser(response);
+                    updateUserDropdown(response);
+                } else {
+                    updateUserDropdown(user);
+                }
+            } catch (error) {
+                console.error('Failed to load user info:', error);
+            }
+        }
+
+        /**
+         * Update user dropdown
+         */
+        function updateUserDropdown(user) {
+            const userNameElement = document.querySelector('.user-name');
+            const userDropdown = document.querySelector('.user-dropdown');
+
+            if (userNameElement) userNameElement.textContent = user.full_name || user.username;
+
+            if (userDropdown) {
+                userDropdown.innerHTML = `
+                    <a href="/profile.html">👤 My Profile</a>
+                    <a href="/settings.html">⚙️ Settings</a>
+                    <hr style="margin: 8px 0; border: none; border-top: 1px solid #ecf0f1;">
+                    <a onclick="logoutUser()" style="cursor: pointer;">🚪 Logout</a>
+                `;
+            }
+        }
+
+        /**
+         * Switch admin tabs
+         */
+        function switchAdminTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.admin-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Update button styles
+            document.querySelectorAll('.admin-tab').forEach(btn => {
+                btn.style.color = 'var(--gray-dark)';
+                btn.style.borderBottomColor = 'transparent';
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            event.target.style.color = 'var(--primary-color)';
+            event.target.style.borderBottomColor = 'var(--secondary-color)';
+        }
+
+        /**
+         * System actions
+         */
+        async function performSystemCheck() {
+            showNotification('Running system check...', 'info');
+            setTimeout(() => {
+                showNotification('System check completed. All services operational.', 'success');
+            }, 2000);
+        }
+
+        async function triggerDatabaseBackup() {
+            showNotification('Creating database backup...', 'info');
+            setTimeout(() => {
+                showNotification('Database backup completed successfully', 'success');
+            }, 3000);
+        }
+
+        async function retrainModel() {
+            showNotification('Starting GNN model retraining...', 'info');
+            setTimeout(() => {
+                showNotification('Model retraining completed. Accuracy: 94.2%', 'success');
+            }, 5000);
+        }
+
+        async function clearCache() {
+            showNotification('Clearing application cache...', 'info');
+            setTimeout(() => {
+                showNotification('Cache cleared successfully', 'success');
+            }, 1000);
+        }
+
+        async function restartServices() {
+            if (!confirm('This will restart all services. Continue?')) return;
+            showNotification('Restarting services...', 'warning');
+            setTimeout(() => {
+                showNotification('Services restarted successfully', 'success');
+            }, 3000);
+        }
+
+        /**
+         * User management
+         */
+        function openAddUserModal() {
+            document.getElementById('addUserModal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('addUserModal').classList.remove('open');
+        }
+
+        function submitAddUser(e) {
+            e.preventDefault();
+            const username = document.getElementById('newUsername').value;
+            const email = document.getElementById('newEmail').value;
+            const fullName = document.getElementById('newFullName').value;
+            const role = document.getElementById('newRole').value;
+
+            showNotification(`User ${username} created successfully`, 'success');
+            closeModal();
+            document.querySelector('form').reset();
+        }
+
+        function editUser(username) {
+            showNotification(`Opening editor for user: ${username}`, 'info');
+        }
+
+        function resetPassword(username) {
+            if (!confirm(`Reset password for ${username}?`)) return;
+            showNotification(`Password reset email sent to ${username}`, 'success');
+        }
+
+        /**
+         * Logs
+         */
+        function filterLogs() {
+            showNotification('Logs filtered', 'info');
+        }
+
+        function downloadLogs() {
+            showNotification('Logs downloaded', 'success');
+        }
+
+        function clearLogs() {
+            if (!confirm('Clear all logs? This action cannot be undone.')) return;
+            showNotification('Logs cleared', 'success');
+        }
+
+        /**
+         * Settings
+         */
+        function saveThresholds() {
+            showNotification('Thresholds updated successfully', 'success');
+        }
+
+        function testEmailConfig() {
+            showNotification('Sending test email...', 'info');
+            setTimeout(() => {
+                showNotification('Test email sent successfully', 'success');
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

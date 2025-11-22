@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Explorer - NETRA TAX</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <h1>🔐 NETRA TAX</h1>
+                <p>Tax Fraud Detection</p>
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="/index.html" class="nav-link">📊 Dashboard</a></li>
+                <li><a href="/upload.html" class="nav-link">📤 Upload</a></li>
+                <li><a href="/company-explorer.html" class="nav-link active">🏢 Companies</a></li>
+                <li><a href="/invoice-explorer.html" class="nav-link">📄 Invoices</a></li>
+                <li><a href="/graph-visualizer.html" class="nav-link">🕸️ Network</a></li>
+                <li><a href="/reports.html" class="nav-link">📑 Reports</a></li>
+                <li><a href="/admin.html" class="nav-link">⚙️ Admin</a></li>
+                <li>
+                    <div class="dropdown">
+                        <a href="#" class="nav-link">👤 <span class="user-name">User</span></a>
+                        <div class="dropdown-menu user-dropdown"></div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h2>🏢 Company Explorer</h2>
+                <p>Search and analyze company fraud risk profiles</p>
+            </div>
+            <div class="header-actions">
+                <input type="text" id="searchInput" placeholder="Search by GSTIN or company name..." style="padding: 10px 16px; border: 1px solid #bdc3c7; border-radius: 8px; width: 300px;" />
+                <button class="btn btn-primary" onclick="performSearch()">🔍 Search</button>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="table-section" style="margin-bottom: 24px;">
+            <h3 style="margin-bottom: 16px; font-size: 16px; color: var(--primary-color); font-weight: 600;">Filters</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div>
+                    <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Risk Level</label>
+                    <select id="riskFilter" onchange="performSearch()" style="width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 8px;">
+                        <option value="">All Levels</option>
+                        <option value="high">High Risk (0.7 - 1.0)</option>
+                        <option value="medium">Medium Risk (0.3 - 0.7)</option>
+                        <option value="low">Low Risk (0.0 - 0.3)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Sort By</label>
+                    <select id="sortFilter" onchange="performSearch()" style="width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 8px;">
+                        <option value="risk_desc">Risk Score (High to Low)</option>
+                        <option value="risk_asc">Risk Score (Low to High)</option>
+                        <option value="name_asc">Name (A to Z)</option>
+                        <option value="name_desc">Name (Z to A)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px; display: block;">Fraud Rings</label>
+                    <select id="fraudRingsFilter" onchange="performSearch()" style="width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 8px;">
+                        <option value="">All Companies</option>
+                        <option value="yes">In Fraud Ring</option>
+                        <option value="no">Not in Fraud Ring</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; align-items: flex-end;">
+                    <button class="btn btn-secondary" onclick="clearFilters()" style="width: 100%;">Clear Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="table-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 16px; color: var(--primary-color); font-weight: 600;">Search Results</h3>
+                <span id="resultCount" style="color: var(--gray-dark);">0 results</span>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>GSTIN</th>
+                            <th>Company Name</th>
+                            <th>Risk Score</th>
+                            <th>Risk Level</th>
+                            <th>Invoices</th>
+                            <th>Fraud Rings</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="companiesTable">
+                        <tr>
+                            <td colspan="7" class="text-center" style="padding: 40px;">
+                                <p style="color: var(--gray-medium); margin-bottom: 16px;">Enter a search query to get started</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" style="display: none; text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #ecf0f1;">
+                <button class="btn btn-small" id="prevBtn" onclick="previousPage()">← Previous</button>
+                <span id="pageInfo" style="margin: 0 16px; color: var(--gray-dark);"></span>
+                <button class="btn btn-small" id="nextBtn" onclick="nextPage()">Next →</button>
+            </div>
+        </div>
+
+        <!-- Company Detail Modal -->
+        <div id="companyModal" class="modal">
+            <div class="modal-content" style="max-width: 800px;">
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+
+                <div id="companyDetail">
+                    <h3 style="font-size: 20px; color: var(--primary-color); margin-bottom: 24px;">Company Details</h3>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">GSTIN</p>
+                            <p id="detailGstin" style="font-weight: 600; font-size: 16px;"></p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Company Name</p>
+                            <p id="detailName" style="font-weight: 600; font-size: 16px;"></p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Risk Score</p>
+                            <p id="detailScore" style="font-weight: 600; font-size: 16px;"></p>
+                        </div>
+                        <div>
+                            <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Risk Level</p>
+                            <p id="detailLevel" style="font-weight: 600; font-size: 16px;"></p>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div style="border-bottom: 2px solid #ecf0f1; margin-bottom: 24px;">
+                        <button class="tab-btn active" onclick="switchTab('overview')" style="padding: 12px 24px; border: none; background: none; color: var(--primary-color); font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+                            Overview
+                        </button>
+                        <button class="tab-btn" onclick="switchTab('analysis')" style="padding: 12px 24px; border: none; background: none; color: var(--gray-dark); font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+                            Analysis
+                        </button>
+                        <button class="tab-btn" onclick="switchTab('invoices')" style="padding: 12px 24px; border: none; background: none; color: var(--gray-dark); font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;">
+                            Invoices
+                        </button>
+                    </div>
+
+                    <div id="overviewTab" class="tab-content">
+                        <h4 style="color: var(--primary-color); margin-bottom: 16px;">Network Information</h4>
+                        <div style="background-color: var(--light-bg); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                                <div>
+                                    <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Connected Entities</p>
+                                    <p id="connectedEntities" style="font-weight: 600; font-size: 18px;">-</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">Network Depth</p>
+                                    <p id="networkDepth" style="font-weight: 600; font-size: 18px;">-</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--gray-dark); font-size: 12px; margin-bottom: 4px;">In Fraud Ring</p>
+                                    <p id="inFraudRing" style="font-weight: 600; font-size: 18px;">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 style="color: var(--primary-color); margin-bottom: 16px;">Risk Factors</h4>
+                        <div id="riskFactors" style="background-color: var(--light-bg); padding: 16px; border-radius: 8px;">
+                            <!-- Risk factors will be populated here -->
+                        </div>
+                    </div>
+
+                    <div id="analysisTab" class="tab-content" style="display: none;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 16px;">Detailed Analysis</h4>
+                        <div id="detailedAnalysis" style="background-color: var(--light-bg); padding: 16px; border-radius: 8px;">
+                            <!-- Analysis will be populated here -->
+                        </div>
+                    </div>
+
+                    <div id="invoicesTab" class="tab-content" style="display: none;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 16px;">Associated Invoices</h4>
+                        <div id="associatedInvoices" style="background-color: var(--light-bg); padding: 16px; border-radius: 8px;">
+                            <!-- Invoices will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button class="btn btn-primary" onclick="generateCompanyReport()">📑 Generate Report</button>
+                    <button class="btn" style="background-color: #bdc3c7; color: white;" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2024 NETRA TAX - AI-Powered Tax Fraud Detection. All rights reserved.</p>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script>
+        let currentPage = 0;
+        let pageSize = 20;
+        let currentGstin = null;
+        let searchResults = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            requireAuth();
+            await loadUserInfo();
+
+            // Check for GSTIN parameter
+            const params = new URLSearchParams(window.location.search);
+            const gstin = params.get('gstin');
+            if (gstin) {
+                document.getElementById('searchInput').value = gstin;
+                performSearch();
+            }
+        });
+
+        /**
+         * Load user info
+         */
+        async function loadUserInfo() {
+            try {
+                const user = getCurrentUser();
+                if (!user) {
+                    const response = await api.getCurrentUser();
+                    setCurrentUser(response);
+                    updateUserDropdown(response);
+                } else {
+                    updateUserDropdown(user);
+                }
+            } catch (error) {
+                console.error('Failed to load user info:', error);
+            }
+        }
+
+        /**
+         * Update user dropdown
+         */
+        function updateUserDropdown(user) {
+            const userNameElement = document.querySelector('.user-name');
+            const userDropdown = document.querySelector('.user-dropdown');
+
+            if (userNameElement) userNameElement.textContent = user.full_name || user.username;
+
+            if (userDropdown) {
+                userDropdown.innerHTML = `
+                    <a href="/profile.html">👤 My Profile</a>
+                    <a href="/settings.html">⚙️ Settings</a>
+                    <hr style="margin: 8px 0; border: none; border-top: 1px solid #ecf0f1;">
+                    <a onclick="logoutUser()" style="cursor: pointer;">🚪 Logout</a>
+                `;
+            }
+        }
+
+        /**
+         * Perform search
+         */
+        async function performSearch() {
+            try {
+                currentPage = 0;
+                const query = document.getElementById('searchInput').value.trim();
+
+                if (!query) {
+                    showNotification('Please enter a search query', 'warning');
+                    return;
+                }
+
+                showSpinner(document.getElementById('companiesTable').parentElement);
+
+                const response = await api.searchCompanies(query, 0, pageSize);
+                searchResults = response || [];
+
+                displayResults();
+                hideSpinner();
+            } catch (error) {
+                console.error('Search error:', error);
+                showNotification('Search failed: ' + error.message, 'error');
+                hideSpinner();
+            }
+        }
+
+        /**
+         * Display search results
+         */
+        function displayResults() {
+            const tbody = document.getElementById('companiesTable');
+            const resultCount = document.getElementById('resultCount');
+
+            if (searchResults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding: 40px;">No companies found</td></tr>';
+                resultCount.textContent = '0 results';
+                return;
+            }
+
+            const start = currentPage * pageSize;
+            const end = start + pageSize;
+            const pageResults = searchResults.slice(start, end);
+
+            tbody.innerHTML = pageResults
+                .map(
+                    company => `
+                <tr>
+                    <td>${company.gstin || '-'}</td>
+                    <td>${company.name || '-'}</td>
+                    <td>${company.risk_score ? company.risk_score.toFixed(2) : '-'}</td>
+                    <td>
+                        ${getRiskLevelBadge(company.risk_score).icon}
+                        <span style="color: ${getRiskLevelBadge(company.risk_score).color}; font-weight: 600;">
+                            ${getRiskLevelBadge(company.risk_score).level}
+                        </span>
+                    </td>
+                    <td>${company.invoice_count || 0}</td>
+                    <td>${company.in_fraud_ring ? '✓ Yes' : '-'}</td>
+                    <td>
+                        <button class="btn btn-small" onclick="viewCompanyDetails('${company.gstin}')">View</button>
+                        <button class="btn btn-small" onclick="viewNetworkGraph('${company.gstin}')" style="background-color: var(--secondary-color); color: var(--dark);">Network</button>
+                    </td>
+                </tr>
+            `,
+                )
+                .join('');
+
+            resultCount.textContent = searchResults.length + ' results';
+
+            // Show pagination if needed
+            const pagination = document.getElementById('pagination');
+            if (searchResults.length > pageSize) {
+                pagination.style.display = 'block';
+                document.getElementById('pageInfo').textContent = `Page ${currentPage + 1} of ${Math.ceil(searchResults.length / pageSize)}`;
+                document.getElementById('prevBtn').disabled = currentPage === 0;
+                document.getElementById('nextBtn').disabled = end >= searchResults.length;
+            } else {
+                pagination.style.display = 'none';
+            }
+        }
+
+        /**
+         * View company details
+         */
+        async function viewCompanyDetails(gstin) {
+            try {
+                const modal = document.getElementById('companyModal');
+                showSpinner(modal);
+
+                currentGstin = gstin;
+
+                const company = searchResults.find(c => c.gstin === gstin);
+                if (!company) return;
+
+                // Update basic info
+                document.getElementById('detailGstin').textContent = company.gstin;
+                document.getElementById('detailName').textContent = company.name;
+                document.getElementById('detailScore').textContent = company.risk_score?.toFixed(2) || '-';
+                const badge = getRiskLevelBadge(company.risk_score);
+                document.getElementById('detailLevel').textContent = `${badge.icon} ${badge.level}`;
+
+                // Load network analysis
+                const analysis = await api.getNetworkAnalysis(gstin);
+
+                // Update overview
+                document.getElementById('connectedEntities').textContent = analysis.connected_entities || '-';
+                document.getElementById('networkDepth').textContent = analysis.network_depth || '-';
+                document.getElementById('inFraudRing').textContent = analysis.in_fraud_ring ? '✓ Yes' : 'No';
+
+                // Display risk factors
+                const riskFactorsDiv = document.getElementById('riskFactors');
+                if (analysis.risk_factors && analysis.risk_factors.length > 0) {
+                    riskFactorsDiv.innerHTML = analysis.risk_factors
+                        .map(
+                            factor => `
+                        <div style="padding: 8px; margin-bottom: 8px; background: var(--white); border-left: 3px solid var(--warning-color); border-radius: 4px;">
+                            <p style="font-weight: 600; color: var(--dark);">${factor.name}</p>
+                            <p style="color: var(--gray-dark); font-size: 13px;">${factor.description}</p>
+                        </div>
+                    `,
+                        )
+                        .join('');
+                } else {
+                    riskFactorsDiv.innerHTML = '<p style="color: var(--gray-medium);">No risk factors identified</p>';
+                }
+
+                // Update analysis tab
+                document.getElementById('detailedAnalysis').innerHTML = `
+                    <div style="background: var(--white); padding: 16px; border-radius: 8px;">
+                        <p><strong>GNN Risk Score:</strong> ${analysis.gnn_risk_score?.toFixed(3) || '-'}</p>
+                        <p><strong>Pattern Anomalies:</strong> ${analysis.pattern_anomalies || 0}</p>
+                        <p><strong>Network Centrality:</strong> ${analysis.network_centrality?.toFixed(3) || '-'}</p>
+                        <p><strong>Historical Patterns:</strong> ${analysis.historical_patterns || '-'}</p>
+                    </div>
+                `;
+
+                // Update invoices tab
+                if (company.invoices && company.invoices.length > 0) {
+                    document.getElementById('associatedInvoices').innerHTML = `
+                        <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: var(--light-bg);">
+                                    <th style="padding: 8px; text-align: left;">Invoice ID</th>
+                                    <th style="padding: 8px; text-align: left;">Amount</th>
+                                    <th style="padding: 8px; text-align: left;">Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${company.invoices.slice(0, 5).map(inv => `
+                                    <tr style="border-bottom: 1px solid #ecf0f1;">
+                                        <td style="padding: 8px;">${inv.id}</td>
+                                        <td style="padding: 8px;">${formatCurrency(inv.amount)}</td>
+                                        <td style="padding: 8px;"><span style="color: var(--danger-color); font-weight: 600;">${inv.risk_level}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    document.getElementById('associatedInvoices').innerHTML = '<p style="color: var(--gray-medium);">No invoices found</p>';
+                }
+
+                hideSpinner();
+                modal.classList.add('open');
+            } catch (error) {
+                console.error('Error loading company details:', error);
+                showNotification('Failed to load company details', 'error');
+                hideSpinner();
+            }
+        }
+
+        /**
+         * View network graph
+         */
+        function viewNetworkGraph(gstin) {
+            closeModal();
+            window.location.href = `/graph-visualizer.html?center=${gstin}`;
+        }
+
+        /**
+         * Generate company report
+         */
+        async function generateCompanyReport() {
+            if (!currentGstin) return;
+
+            try {
+                const company = searchResults.find(c => c.gstin === currentGstin);
+                if (!company) return;
+
+                showNotification('Generating report...', 'info');
+
+                // Call report generation API
+                const response = await api.generateReport(company.gstin);
+
+                if (response.report_id) {
+                    showNotification('Report generated successfully', 'success');
+                    // Download the report
+                    setTimeout(() => {
+                        window.location.href = `/reports.html?id=${response.report_id}`;
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Report generation error:', error);
+                showNotification('Failed to generate report', 'error');
+            }
+        }
+
+        /**
+         * Switch tabs in modal
+         */
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.style.color = 'var(--gray-dark)';
+                btn.style.borderBottomColor = 'transparent';
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            event.target.style.color = 'var(--primary-color)';
+            event.target.style.borderBottomColor = 'var(--secondary-color)';
+        }
+
+        /**
+         * Close modal
+         */
+        function closeModal() {
+            document.getElementById('companyModal').classList.remove('open');
+        }
+
+        /**
+         * Pagination
+         */
+        function previousPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                displayResults();
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function nextPage() {
+            if ((currentPage + 1) * pageSize < searchResults.length) {
+                currentPage++;
+                displayResults();
+                window.scrollTo(0, 0);
+            }
+        }
+
+        /**
+         * Clear filters
+         */
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('riskFilter').value = '';
+            document.getElementById('sortFilter').value = 'risk_desc';
+            document.getElementById('fraudRingsFilter').value = '';
+            document.getElementById('companiesTable').innerHTML = '<tr><td colspan="7" class="text-center" style="padding: 40px;">Enter a search query to get started</td></tr>';
+        }
+    </script>
+</body>
+</html>

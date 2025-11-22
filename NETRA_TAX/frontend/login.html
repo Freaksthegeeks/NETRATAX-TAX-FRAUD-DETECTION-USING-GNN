@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - NETRA TAX</title>
+    <style>
+        :root {
+            --primary-color: #114C5A;
+            --primary-dark: #0d3240;
+            --secondary-color: #FFC801;
+            --accent-color: #FF9932;
+            --danger-color: #e74c3c;
+            --light-bg: #F1F6F4;
+            --white: #FFFFFF;
+            --gray-dark: #34495e;
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+            --transition-normal: 300ms ease-in-out;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            max-width: 450px;
+            width: 100%;
+            padding: 48px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .login-header p {
+            color: var(--gray-dark);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all var(--transition-normal);
+            background-color: var(--white);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(255, 200, 1, 0.1);
+        }
+
+        .toggle-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 20px;
+        }
+
+        .toggle-form button {
+            flex: 1;
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            color: var(--gray-dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -20px;
+            padding-bottom: 20px;
+        }
+
+        .toggle-form button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--secondary-color);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .btn-login,
+        .btn-signup {
+            width: 100%;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            margin-bottom: 16px;
+        }
+
+        .btn-login:hover,
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(17, 76, 90, 0.3);
+        }
+
+        .btn-login:active,
+        .btn-signup:active {
+            transform: translateY(0);
+        }
+
+        .help-text {
+            text-align: center;
+            color: var(--gray-dark);
+            font-size: 13px;
+            margin-top: 20px;
+        }
+
+        .help-text a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all var(--transition-normal);
+        }
+
+        .help-text a:hover {
+            color: var(--secondary-color);
+        }
+
+        .error-message {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border-left: 4px solid var(--danger-color);
+            display: none;
+            font-size: 13px;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .form-group.two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group.two-col > * {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 32px 24px;
+            }
+
+            .login-header h1 {
+                font-size: 24px;
+            }
+
+            .form-group.two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Header -->
+        <div class="login-header">
+            <h1>🔐 NETRA TAX</h1>
+            <p>AI-Powered Tax Fraud Detection Platform</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message"></div>
+
+        <!-- Toggle Forms -->
+        <div class="toggle-form">
+            <button id="loginTabBtn" class="toggle-btn active" data-form="login">Sign In</button>
+            <button id="signupTabBtn" class="toggle-btn" data-form="signup">Create Account</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form id="loginForm" class="form-section active">
+            <div class="form-group">
+                <label for="loginUsername">Username or Email</label>
+                <input type="text" id="loginUsername" name="username" placeholder="Enter your username" required />
+            </div>
+
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required />
+            </div>
+
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+                <label style="margin-bottom: 0;">
+                    <input type="checkbox" id="rememberMe" name="rememberMe" />
+                    <span style="margin-left: 6px; font-weight: 400;">Remember me</span>
+                </label>
+                <a href="#" style="color: var(--accent-color); font-size: 13px; text-decoration: none;">
+                    Forgot password?
+                </a>
+            </div>
+
+            <div id="loginLoading" class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: var(--gray-dark); font-size: 13px;">Authenticating...</p>
+            </div>
+
+            <button type="submit" class="btn-login">Sign In</button>
+
+            <div class="help-text">
+                Don't have an account? <a onclick="switchForm('signup')">Create one now</a>
+            </div>
+        </form>
+
+        <!-- SIGNUP FORM -->
+        <form id="signupForm" class="form-section">
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" name="fullName" placeholder="Your full name" required />
+            </div>
+
+            <div class="form-group">
+                <label for="signupEmail">Email Address</label>
+                <input type="email" id="signupEmail" name="email" placeholder="your.email@example.com" required />
+            </div>
+
+            <div class="form-group">
+                <label for="signupUsername">Username</label>
+                <input type="text" id="signupUsername" name="username" placeholder="Choose a username" required />
+            </div>
+
+            <div class="form-group">
+                <label for="signupPassword">Password</label>
+                <input
+                    type="password"
+                    id="signupPassword"
+                    name="password"
+                    placeholder="Minimum 8 characters"
+                    required
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="Re-enter your password"
+                    required
+                />
+            </div>
+
+            <div class="form-group">
+                <label for="userRole">User Role</label>
+                <select id="userRole" name="role" required>
+                    <option value="">-- Select Role --</option>
+                    <option value="analyst">Analyst</option>
+                    <option value="auditor">Auditor</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="font-size: 12px;">
+                <input type="checkbox" id="agreeTOS" name="agreeTOS" required />
+                <label for="agreeTOS" style="display: inline; margin-bottom: 0;">
+                    I agree to the
+                    <a href="#" style="color: var(--accent-color); text-decoration: none;">Terms of Service</a>
+                    and
+                    <a href="#" style="color: var(--accent-color); text-decoration: none;">Privacy Policy</a>
+                </label>
+            </div>
+
+            <div id="signupLoading" class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: var(--gray-dark); font-size: 13px;">Creating account...</p>
+            </div>
+
+            <button type="submit" class="btn-signup">Create Account</button>
+
+            <div class="help-text">
+                Already have an account? <a onclick="switchForm('login')">Sign in here</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const loginTabBtn = document.getElementById('loginTabBtn');
+        const signupTabBtn = document.getElementById('signupTabBtn');
+
+        /**
+         * Switch between login and signup forms
+         */
+        function switchForm(formType) {
+            errorMessage.classList.remove('show');
+
+            if (formType === 'login') {
+                loginForm.classList.add('active');
+                signupForm.classList.remove('active');
+                loginTabBtn.classList.add('active');
+                signupTabBtn.classList.remove('active');
+            } else {
+                signupForm.classList.add('active');
+                loginForm.classList.remove('active');
+                signupTabBtn.classList.add('active');
+                loginTabBtn.classList.remove('active');
+            }
+        }
+
+        /**
+         * Show error message
+         */
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        /**
+         * Hide error message
+         */
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        /**
+         * Handle login submission
+         */
+        loginForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            hideError();
+
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            if (!username || !password) {
+                showError('Please enter username and password');
+                return;
+            }
+
+            try {
+                document.getElementById('loginLoading').classList.add('show');
+                document.querySelector('.btn-login').disabled = true;
+
+                // Call API to login
+                const response = await fetch('http://localhost:8000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Login failed');
+                }
+
+                const data = await response.json();
+
+                // Store tokens
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
+
+                // Store user info
+                if (data.user) {
+                    localStorage.setItem('current_user', JSON.stringify(data.user));
+                }
+
+                // Remember me functionality
+                if (rememberMe) {
+                    localStorage.setItem('remember_username', username);
+                }
+
+                // Redirect to dashboard
+                window.location.href = '/index.html';
+            } catch (error) {
+                console.error('Login error:', error);
+                showError(error.message);
+            } finally {
+                document.getElementById('loginLoading').classList.remove('show');
+                document.querySelector('.btn-login').disabled = false;
+            }
+        });
+
+        /**
+         * Handle signup submission
+         */
+        signupForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            hideError();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const role = document.getElementById('userRole').value;
+            const agreeTOS = document.getElementById('agreeTOS').checked;
+
+            // Validation
+            if (!fullName || !email || !username || !password || !confirmPassword || !role) {
+                showError('Please fill in all fields');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            if (password.length < 8) {
+                showError('Password must be at least 8 characters');
+                return;
+            }
+
+            if (!agreeTOS) {
+                showError('You must agree to the Terms of Service');
+                return;
+            }
+
+            // Basic email validation
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showError('Please enter a valid email address');
+                return;
+            }
+
+            try {
+                document.getElementById('signupLoading').classList.add('show');
+                document.querySelector('.btn-signup').disabled = true;
+
+                // Call API to signup
+                const response = await fetch('http://localhost:8000/api/auth/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        email,
+                        username,
+                        password,
+                        role,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Signup failed');
+                }
+
+                // Show success and switch to login
+                errorMessage.textContent = 'Account created successfully! Please log in.';
+                errorMessage.style.color = '#27ae60';
+                errorMessage.style.borderLeftColor = '#27ae60';
+                errorMessage.style.backgroundColor = 'rgba(39, 174, 96, 0.1)';
+                errorMessage.classList.add('show');
+
+                // Clear form
+                signupForm.reset();
+
+                // Switch to login after 2 seconds
+                setTimeout(() => {
+                    switchForm('login');
+                    errorMessage.style.color = '#e74c3c';
+                    errorMessage.style.borderLeftColor = '#e74c3c';
+                    errorMessage.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
+                }, 2000);
+            } catch (error) {
+                console.error('Signup error:', error);
+                showError(error.message);
+            } finally {
+                document.getElementById('signupLoading').classList.remove('show');
+                document.querySelector('.btn-signup').disabled = false;
+            }
+        });
+
+        /**
+         * Tab switching with data attribute
+         */
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                switchForm(btn.dataset.form);
+            });
+        });
+
+        /**
+         * Remember me functionality - load saved username
+         */
+        window.addEventListener('load', () => {
+            const savedUsername = localStorage.getItem('remember_username');
+            if (savedUsername) {
+                document.getElementById('loginUsername').value = savedUsername;
+                document.getElementById('rememberMe').checked = true;
+            }
+        });
+
+        /**
+         * Redirect if already logged in
+         */
+        if (localStorage.getItem('access_token')) {
+            window.location.href = '/index.html';
+        }
+    </script>
+</body>
+</html>

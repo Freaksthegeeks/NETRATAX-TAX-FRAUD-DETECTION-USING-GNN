@@ -1,0 +1,57 @@
+/* Color Palette Variables */
+:root {
+  --arctic-powder: #F1F6F4;
+  --forsythia: #FFC801;
+  --nocturnal-expedition: #114C5A;
+  --mystic-mint: #D9E8E2;
+  --deep-saffron: #FF9932;
+  --oceanic-noir: #172B36;
+  
+  /* Semantic colors */
+  --bg-primary: var(--arctic-powder);
+  --bg-secondary: var(--mystic-mint);
+  --accent-primary: var(--forsythia);
+  --accent-secondary: var(--deep-saffron);
+  --text-primary: var(--oceanic-noir);
+  --text-secondary: var(--nocturnal-expedition);
+  --card-bg: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, var(--arctic-powder) 0%, var(--mystic-mint) 100%);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mystic-mint);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nocturnal-expedition);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--oceanic-noir);
+}
+
