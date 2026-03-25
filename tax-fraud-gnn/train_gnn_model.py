@@ -65,27 +65,21 @@ for idx, row in invoices.iterrows():
             amount=row['amount'],
             itc_claimed=row['itc_claimed']
         )
-
 print(f"✅ Graph created with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges")
 print(f"✅ Average degree: {2 * G.number_of_edges() / G.number_of_nodes():.2f}")
 print(f"✅ Network density: {nx.density(G):.6f}")
-
 # ============================================================================
 # 3. EXTRACT NODE FEATURES & LABELS
 # ============================================================================
-
 print("\n⚙️  Extracting features and labels...")
-
 # Sort companies to ensure consistency
 sorted_companies = sorted(G.nodes())
 node_mapping = {company_id: idx for idx, company_id in enumerate(sorted_companies)}
 reverse_mapping = {idx: company_id for company_id, idx in node_mapping.items()}
-
 # Extract features (normalized)
 feature_cols = ['turnover', 'sent_invoices', 'received_invoices']
 X_features = []
 y_labels = []
-
 for company_id in sorted_companies:
     node_data = G.nodes[company_id]
     features_row = [

@@ -21,7 +21,21 @@ from collections import deque
 import torch.nn as nn
 from flask_cors import CORS
 from torch_geometric.data import Data  # Add this import
-
+from neo4j_client import driver
+from neo4j_queries import (
+    get_top_risky_companies,
+    get_company_stats,
+    get_invoice_stats,
+    get_top_senders,
+    get_top_receivers,
+    get_fraud_patterns,
+    get_suspicious_networks,
+    search_companies,
+    get_state_statistics,
+    get_invoice_anomalies
+)
+import threading
+import uuid
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -72,6 +86,7 @@ INVOICES = None
 MAPPINGS = None
 FRAUD_PROBA = None
 NETWORKX_GRAPH = None  # Add NetworkX graph for easier manipulation
+ANALYTICS_JOBS = {}  # Simple in-memory job tracker: job_id -> {status, started_at, finished_at, error}
 
 
 def load_model_and_data():
@@ -934,41 +949,129 @@ def get_company_detail(company_id):
 
 @app.route("/api/statistics")
 def get_statistics():
-    """API: Get overall statistics"""
+    """API: Get overall statistics from Neo4j and Graph Data"""
     try:
-        # Check if data is loaded
-        if FRAUD_PROBA is None or len(FRAUD_PROBA) == 0:
-            logger.error("FRAUD_PROBA is not initialized")
-            return jsonify({"error": "Model not loaded", "total_companies": 0}), 500
+        # Get statistics from Neo4j
+        company_stats = get_company_stats()
+        invoice_stats = get_invoice_stats()
         
-        if GRAPH_DATA is None:
-            logger.error("GRAPH_DATA is not initialized")
-            return jsonify({"error": "Graph data not loaded", "total_companies": 0}), 500
-        
-        if COMPANIES is None or len(COMPANIES) == 0:
-            logger.error("COMPANIES is not initialized")
-            return jsonify({"error": "Companies data not loaded", "total_companies": 0}), 500
-        
-        high_risk = (FRAUD_PROBA > 0.7).sum()
-        medium_risk = ((FRAUD_PROBA > 0.3) & (FRAUD_PROBA <= 0.7)).sum()
-        low_risk = (FRAUD_PROBA <= 0.3).sum()
+        # Also include graph-based statistics if available
+        graph_edges = 0
+        if GRAPH_DATA is not None:
+            graph_edges = int(GRAPH_DATA.num_edges)
         
         stats = {
-            "total_companies": len(COMPANIES),
-            "total_edges": int(GRAPH_DATA.num_edges),
-            "high_risk_count": int(high_risk),
-            "medium_risk_count": int(medium_risk),
-            "low_risk_count": int(low_risk),
-            "fraud_count": int((COMPANIES["predicted_fraud"] == 1).sum()),
-            "average_fraud_probability": float(np.mean(FRAUD_PROBA))
+            "total_companies": company_stats.get("total_companies", 0),
+            "fraud_count": company_stats.get("fraud_count", 0),
+            "average_fraud_probability": company_stats.get("avg_fraud_probability", 0),
+            "unique_states": company_stats.get("unique_locations", 0),
+            "total_invoices": invoice_stats.get("total_invoices", 0),
+            "total_invoice_value": invoice_stats.get("total_amount", 0),
+            "total_edges": graph_edges,
+            "data_source": "Neo4j + PyTorch Geometric"
         }
         
-        logger.info(f"Returning statistics: total_companies={stats['total_companies']}, total_edges={stats['total_edges']}")
+        # Calculate risk categories from fraud probability if available
+        if FRAUD_PROBA is not None and len(FRAUD_PROBA) > 0:
+            high_risk = (FRAUD_PROBA > 0.7).sum()
+            medium_risk = ((FRAUD_PROBA > 0.3) & (FRAUD_PROBA <= 0.7)).sum()
+            low_risk = (FRAUD_PROBA <= 0.3).sum()
+            stats.update({
+                "high_risk_count": int(high_risk),
+                "medium_risk_count": int(medium_risk),
+                "low_risk_count": int(low_risk)
+            })
+        
+        logger.info(f"Returning statistics from Neo4j: {stats}")
         return jsonify(stats)
     
     except Exception as e:
         logger.error(f"Error in get_statistics: {e}", exc_info=True)
         return jsonify({"error": str(e), "total_companies": 0}), 500
+
+
+@app.route('/api/analytics/run', methods=['POST'])
+def analytics_run():
+    """Trigger analytics run (NetworkX-based). Runs in background and returns a job id."""
+    try:
+        # Create job id and start background thread
+        job_id = str(uuid.uuid4())
+        ANALYTICS_JOBS[job_id] = {"status": "running", "started_at": time.time(), "finished_at": None, "error": None}
+
+        def worker(jid):
+            try:
+                # Import here to keep startup fast and isolated
+                import gds_analytics as ga
+                ga.run_all_analytics()
+                ANALYTICS_JOBS[jid]["status"] = "completed"
+                ANALYTICS_JOBS[jid]["finished_at"] = time.time()
+            except Exception as ex:
+                logger.error(f"Analytics job {jid} failed: {ex}", exc_info=True)
+                ANALYTICS_JOBS[jid]["status"] = "failed"
+                ANALYTICS_JOBS[jid]["error"] = str(ex)
+                ANALYTICS_JOBS[jid]["finished_at"] = time.time()
+
+        t = threading.Thread(target=worker, args=(job_id,), daemon=True)
+        t.start()
+
+        return jsonify({"job_id": job_id, "status": "started"})
+
+    except Exception as e:
+        logger.error(f"Error starting analytics job: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/analytics/jobs')
+def analytics_jobs():
+    """List analytics background jobs and statuses."""
+    try:
+        return jsonify(ANALYTICS_JOBS)
+    except Exception as e:
+        logger.error(f"Error returning analytics jobs: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/analytics/top_pagerank')
+def api_top_pagerank():
+    """Return top companies by PageRank stored in Neo4j."""
+    try:
+        limit = int(request.args.get('limit', 10))
+        query = """
+        MATCH (c:Company)
+        WHERE c.pagerank IS NOT NULL
+        RETURN c.gstin AS gstin, c.name AS name, c.state AS state, c.pagerank AS pagerank, c.is_fraud AS is_fraud
+        ORDER BY c.pagerank DESC
+        LIMIT $limit
+        """
+        with driver.session() as session:
+            result = session.run(query, limit=limit)
+            rows = [dict(r) for r in result]
+        return jsonify(rows)
+    except Exception as e:
+        logger.error(f"Error fetching top pagerank: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/analytics/communities')
+def api_communities():
+    """Return community summaries (id, size, sample members) from Neo4j."""
+    try:
+        min_size = int(request.args.get('min_size', 4))
+        query = """
+        MATCH (c:Company)
+        WHERE c.community_id IS NOT NULL
+        WITH c.community_id AS comm, collect(c.gstin) AS members
+        WHERE size(members) >= $min_size
+        RETURN comm AS community_id, size(members) AS size, members[0..10] AS sample_members
+        ORDER BY size DESC
+        """
+        with driver.session() as session:
+            result = session.run(query, min_size=min_size)
+            rows = [dict(r) for r in result]
+        return jsonify(rows)
+    except Exception as e:
+        logger.error(f"Error fetching communities: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/chart/fraud_distribution")
@@ -1133,58 +1236,36 @@ def get_top_receivers_table():
 
 
 @app.route("/api/top_senders")
-def get_top_senders():
-    """API: Top invoice senders - returns Plotly chart data"""
+def api_top_senders_chart():
+    """API: Top invoice senders - queries Neo4j directly and returns Plotly JSON"""
     try:
-        if INVOICES is None or len(INVOICES) == 0:
-            logger.warning("INVOICES is empty")
-            return jsonify({"error": "No invoice data available"}), 404
+        # call the helper imported from neo4j_queries
+        top_senders = get_top_senders(limit=10)
         
-        if "seller_id" not in INVOICES.columns:
-            logger.error(f"Missing seller_id column. Available columns: {list(INVOICES.columns)}")
-            return jsonify({"error": f"Missing seller_id column. Available: {list(INVOICES.columns)}"}), 400
-        
-        top_senders = INVOICES.groupby("seller_id").size().nlargest(10)
-        
-        if len(top_senders) == 0:
-            logger.warning("No top senders found after grouping")
+        if not top_senders:
+            logger.warning("No top senders found in Neo4j")
             return jsonify({"error": "No sender data available"}), 404
         
         company_ids = []
         counts = []
         colors = []
         
-        for seller_id, count in top_senders.items():
-            seller_id_str = str(seller_id).strip()
-            company_ids.append(seller_id_str)
-            counts.append(int(count))
+        for sender in top_senders:
+            gstin = sender.get('gstin', 'Unknown')
+            company_ids.append(gstin)
+            counts.append(int(sender.get('invoice_count', 0)))
             
-            # Try to find matching company for color coding
-            if COMPANIES is not None and len(COMPANIES) > 0 and "company_id" in COMPANIES.columns:
-                company = COMPANIES[COMPANIES["company_id"].astype(str).str.strip() == seller_id_str]
-                if len(company) > 0 and 'fraud_probability' in company.columns:
-                    fraud_prob = float(company.iloc[0]['fraud_probability'])
-                    if fraud_prob > 0.7:
-                        colors.append('#FF4444')  # Red for high risk
-                    elif fraud_prob > 0.3:
-                        colors.append('#FF9932')  # Orange for medium risk
-                    else:
-                        colors.append('#114C5A')  # Blue for low risk
-                else:
-                    colors.append('#6C757D')  # Gray for unknown
+            # Color code by fraud status
+            if sender.get('is_fraud') == 1:
+                colors.append('#FF4444')  # Red for fraud
             else:
-                colors.append('#114C5A')  # Default color
-        
-        # Ensure we have data
-        if len(company_ids) == 0:
-            logger.error("No company IDs collected")
-            return jsonify({"error": "No data to display"}), 404
+                colors.append('#114C5A')  # Blue for normal
         
         fig = go.Figure(data=[
             go.Bar(
                 x=company_ids,
                 y=counts,
-                marker=dict(color=colors if len(colors) == len(counts) else '#114C5A'),
+                marker=dict(color=colors),
                 text=counts,
                 textposition='outside',
                 textfont=dict(size=11)
@@ -1192,7 +1273,7 @@ def get_top_senders():
         ])
         fig.update_layout(
             title="Top 10 Invoice Senders",
-            xaxis_title="Company ID",
+            xaxis_title="Company ID (GSTIN)",
             yaxis_title="Invoice Count",
             height=400,
             paper_bgcolor='rgba(0,0,0,0)',
@@ -1207,62 +1288,40 @@ def get_top_senders():
     
     except Exception as e:
         logger.error(f"Error in get_top_senders: {e}", exc_info=True)
-        return jsonify({"error": str(e), "traceback": str(e.__traceback__)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/top_receivers")
-def get_top_receivers():
-    """API: Top invoice receivers - returns Plotly chart data"""
+def api_top_receivers_chart():
+    """API: Top invoice receivers - queries Neo4j directly and returns Plotly JSON"""
     try:
-        if INVOICES is None or len(INVOICES) == 0:
-            logger.warning("INVOICES is empty")
-            return jsonify({"error": "No invoice data available"}), 404
+        # call the helper imported from neo4j_queries
+        top_receivers = get_top_receivers(limit=10)
         
-        if "buyer_id" not in INVOICES.columns:
-            logger.error(f"Missing buyer_id column. Available columns: {list(INVOICES.columns)}")
-            return jsonify({"error": f"Missing buyer_id column. Available: {list(INVOICES.columns)}"}), 400
-        
-        top_receivers = INVOICES.groupby("buyer_id").size().nlargest(10)
-        
-        if len(top_receivers) == 0:
-            logger.warning("No top receivers found after grouping")
+        if not top_receivers:
+            logger.warning("No top receivers found in Neo4j")
             return jsonify({"error": "No receiver data available"}), 404
         
         company_ids = []
         counts = []
         colors = []
         
-        for buyer_id, count in top_receivers.items():
-            buyer_id_str = str(buyer_id).strip()
-            company_ids.append(buyer_id_str)
-            counts.append(int(count))
+        for receiver in top_receivers:
+            gstin = receiver.get('gstin', 'Unknown')
+            company_ids.append(gstin)
+            counts.append(int(receiver.get('invoice_count', 0)))
             
-            # Try to find matching company for color coding
-            if COMPANIES is not None and len(COMPANIES) > 0 and "company_id" in COMPANIES.columns:
-                company = COMPANIES[COMPANIES["company_id"].astype(str).str.strip() == buyer_id_str]
-                if len(company) > 0 and 'fraud_probability' in company.columns:
-                    fraud_prob = float(company.iloc[0]['fraud_probability'])
-                    if fraud_prob > 0.7:
-                        colors.append('#FF4444')  # Red for high risk
-                    elif fraud_prob > 0.3:
-                        colors.append('#FF9932')  # Orange for medium risk
-                    else:
-                        colors.append('#114C5A')  # Blue for low risk
-                else:
-                    colors.append('#6C757D')  # Gray for unknown
+            # Color code by fraud status
+            if receiver.get('is_fraud') == 1:
+                colors.append('#FF4444')  # Red for fraud
             else:
-                colors.append('#FF6B6B')  # Default coral color
-        
-        # Ensure we have data
-        if len(company_ids) == 0:
-            logger.error("No company IDs collected")
-            return jsonify({"error": "No data to display"}), 404
+                colors.append('#FF6B6B')  # Coral for normal
         
         fig = go.Figure(data=[
             go.Bar(
                 x=company_ids,
                 y=counts,
-                marker=dict(color=colors if len(colors) == len(counts) else '#FF6B6B'),
+                marker=dict(color=colors),
                 text=counts,
                 textposition='outside',
                 textfont=dict(size=11)
@@ -1270,7 +1329,7 @@ def get_top_receivers():
         ])
         fig.update_layout(
             title="Top 10 Invoice Receivers",
-            xaxis_title="Company ID",
+            xaxis_title="Company ID (GSTIN)",
             yaxis_title="Invoice Count",
             height=400,
             paper_bgcolor='rgba(0,0,0,0)',
@@ -1285,7 +1344,7 @@ def get_top_receivers():
     
     except Exception as e:
         logger.error(f"Error in get_top_receivers: {e}", exc_info=True)
-        return jsonify({"error": str(e), "traceback": str(e.__traceback__)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/locations")
@@ -1334,7 +1393,7 @@ def predict():
 
 @app.route("/api/chatbot", methods=['POST'])
 def chatbot_api():
-    """API endpoint for chatbot queries"""
+    """API endpoint for chatbot queries - uses Neo4j data"""
     try:
         # Get the user message
         data = request.get_json()
@@ -1347,44 +1406,133 @@ def chatbot_api():
         from groq import Groq
         
         # Initialize Groq client with the provided API key
-        GROQ_API_KEY = "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"
+        GROQ_API_KEY = "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"
         client = Groq(api_key=GROQ_API_KEY)
         
-        # Get data statistics for context
-        def get_data_statistics():
-            stats = []
-            
-            if COMPANIES is not None:
-                stats.append(f"Companies Dataset: {len(COMPANIES)} records")
-                if "is_fraud" in COMPANIES.columns:
-                    fraud_count = COMPANIES["is_fraud"].sum()
-                    stats.append(f"Fraud Companies: {fraud_count} ({fraud_count/len(COMPANIES)*100:.2f}%)")
-                if "turnover" in COMPANIES.columns:
-                    stats.append(f"Total Turnover: ₹{COMPANIES['turnover'].sum():,.0f}")
-                    stats.append(f"Average Turnover: ₹{COMPANIES['turnover'].mean():,.0f}")
-                if "location" in COMPANIES.columns:
-                    stats.append(f"Locations Covered: {COMPANIES['location'].nunique()}")
-                    top_locations = COMPANIES["location"].value_counts().head(3)
-                    stats.append(f"Top 3 Locations: {dict(top_locations)}")
-            
-            if INVOICES is not None:
-                stats.append(f"Invoices Dataset: {len(INVOICES)} records")
-                if "amount" in INVOICES.columns:
-                    stats.append(f"Total Invoice Value: ₹{INVOICES['amount'].sum():,.0f}")
-                    stats.append(f"Average Invoice Value: ₹{INVOICES['amount'].mean():,.0f}")
-                if "itc_claimed" in INVOICES.columns:
-                    stats.append(f"Total ITC Claims: ₹{INVOICES['itc_claimed'].sum():,.0f}")
-                    stats.append(f"Average ITC per Invoice: ₹{INVOICES['itc_claimed'].mean():,.0f}")
-            
-            return "\n".join(stats)
+        # Build chatbot context from local processed CSVs loaded into memory
+        logger.info("Building chatbot context from local processed data (COMPANIES/INVOICES)")
+
+        def safe_pct(v):
+            try:
+                if v is None:
+                    return "0.0%"
+                return f"{float(v):.1%}"
+            except Exception:
+                return str(v)
+
+        def safe_currency(v):
+            try:
+                if v is None:
+                    return "₹0"
+                return f"₹{float(v):,.0f}"
+            except Exception:
+                return str(v)
+
+        # Gather company-level stats from the in-memory COMPANIES dataframe
+        try:
+            total_companies = int(len(COMPANIES)) if COMPANIES is not None else 0
+            fraud_count = int((COMPANIES['predicted_fraud'] == 1).sum()) if COMPANIES is not None else 0
+            avg_fp = float(COMPANIES['fraud_probability'].mean()) if COMPANIES is not None and len(COMPANIES) > 0 else None
+            unique_locations = int(COMPANIES['location'].nunique()) if COMPANIES is not None else 0
+        except Exception:
+            total_companies = 0
+            fraud_count = 0
+            avg_fp = None
+            unique_locations = 0
+
+        company_stats = {
+            'total_companies': total_companies,
+            'fraud_count': fraud_count,
+            'avg_fraud_probability': avg_fp,
+            'unique_locations': unique_locations
+        }
+
+        # Gather invoice-level stats from the in-memory INVOICES dataframe
+        try:
+            total_invoices = int(len(INVOICES)) if INVOICES is not None else 0
+            total_amount = float(INVOICES['amount'].sum()) if INVOICES is not None and 'amount' in INVOICES.columns else 0.0
+            avg_amount = float(INVOICES['amount'].mean()) if INVOICES is not None and 'amount' in INVOICES.columns and len(INVOICES) > 0 else None
+            total_itc = float(INVOICES['itc_claimed'].sum()) if INVOICES is not None and 'itc_claimed' in INVOICES.columns else 0.0
+        except Exception:
+            total_invoices = 0
+            total_amount = 0.0
+            avg_amount = None
+            total_itc = 0.0
+
+        invoice_stats = {
+            'total_invoices': total_invoices,
+            'total_amount': total_amount,
+            'avg_amount': avg_amount,
+            'total_itc': total_itc
+        }
+
+        # Initialize context string (derived from local processed data)
+        neo4j_context = "=== LIVE LOCAL PROCESSED DATA STATISTICS ===\n\n"
+
+        # Top risky companies from COMPANIES
+        try:
+            if COMPANIES is not None and 'fraud_probability' in COMPANIES.columns:
+                top_risky_df = COMPANIES.sort_values('fraud_probability', ascending=False).head(5)
+                top_risky = [
+                    {'gstin': str(r.get('company_id', '')), 'name': r.get('company_name') if 'company_name' in r else '', 'state': r.get('location', ''), 'fraud_probability': float(r.get('fraud_probability', 0))}
+                    for _, r in top_risky_df.iterrows()
+                ]
+            else:
+                top_risky = []
+        except Exception:
+            top_risky = []
+
+        # Simple fraud patterns inferred from invoices (local heuristics)
+        fraud_patterns = []
+        try:
+            if INVOICES is not None and 'amount' in INVOICES.columns and 'itc_claimed' in INVOICES.columns:
+                mask = (INVOICES['amount'] > 0) & (INVOICES['itc_claimed'] / INVOICES['amount'] > 0.5)
+                high_itc_count = int(mask.sum())
+                fraud_patterns.append({'pattern': 'High ITC ratio (>50%)', 'count': high_itc_count})
+            else:
+                fraud_patterns.append({'pattern': 'High ITC ratio (>50%)', 'count': 0})
+        except Exception:
+            fraud_patterns.append({'pattern': 'High ITC ratio (>50%)', 'count': 0})
+
+        # Fraud by state / location
+        try:
+            if COMPANIES is not None and 'location' in COMPANIES.columns:
+                state_grp = COMPANIES.groupby('location').agg(total_companies=('company_id','count'), fraud_count=('predicted_fraud','sum')).reset_index()
+                state_stats = state_grp.sort_values('fraud_count', ascending=False).to_dict('records')
+            else:
+                state_stats = []
+        except Exception:
+            state_stats = []
         
-        # Enhanced context for the LLM
+        if top_risky:
+            neo4j_context += "Top Risky Companies:\n"
+            for i, company in enumerate(top_risky[:5], 1):
+                neo4j_context += f"{i}. {company.get('gstin')} - {company.get('name')} ({company.get('state')})\n"
+            neo4j_context += "\n"
+        
+        if fraud_patterns:
+            neo4j_context += "Common Fraud Patterns:\n"
+            for pattern_data in fraud_patterns[:5]:
+                neo4j_context += f"- {pattern_data.get('pattern')}: {pattern_data.get('count')} occurrences\n"
+            neo4j_context += "\n"
+        
+        if state_stats:
+            neo4j_context += "Fraud Rate by State (Top 5):\n"
+            for state_data in state_stats[:5]:
+                state = state_data.get('state', 'Unknown')
+                fraud_count = state_data.get('fraud_count', 0)
+                total = state_data.get('total_companies', 1)
+                fraud_rate = (fraud_count / total * 100) if total > 0 else 0
+                neo4j_context += f"- {state}: {fraud_count}/{total} ({fraud_rate:.1f}%)\n"
+        
+        # Enhanced context for the LLM (note: using local processed CSV data)
         system_context = (
             "You are a GST tax compliance and fraud detection expert assistant. "
-            "You have access to a dataset of companies and their invoices. "
-            "Provide accurate, data-driven responses based on the following information:\n\n"
-            f"=== DATASET STATISTICS ===\n{get_data_statistics()}\n\n"
-            "Answer the user's question accurately and concisely."
+            "You have access to the project's processed dataset (tax-fraud-gnn/data/processed) containing companies, invoices, and fraud detection data. "
+            "Provide accurate, data-driven responses based on the following live information:\n\n"
+            f"{neo4j_context}\n"
+            "When answering questions about fraud, companies, or invoices, reference specific data points from the dataset. "
+            "Be concise but informative."
         )
         
         # Prepare messages with context

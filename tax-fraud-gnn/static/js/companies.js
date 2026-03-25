@@ -30,8 +30,8 @@ function setupEventListeners() {
             thresholdValue.style.color = 'var(--forsythia)';
         });
         
-        // Initialize display value
-        thresholdValue.textContent = riskSlider.value.toFixed(2);
+        // Initialize display value (ensure numeric conversion)
+        thresholdValue.textContent = parseFloat(riskSlider.value).toFixed(2);
     }
 
     // Location filter
@@ -42,20 +42,45 @@ function setupEventListeners() {
         });
     }
 
-    // Apply filters button
+    // Apply filters button - read current control values immediately
     const applyButton = document.getElementById('applyFilters');
     if (applyButton) {
-        applyButton.addEventListener('click', loadCompanies);
+        applyButton.addEventListener('click', function() {
+            // Ensure we read the latest values from controls
+            const slider = document.getElementById('riskThreshold');
+            if (slider) currentRiskThreshold = parseFloat(slider.value);
+
+            const locSelect = document.getElementById('locationFilter');
+            if (locSelect) {
+                currentLocations = Array.from(locSelect.selectedOptions).map(opt => opt.value).filter(v => v);
+            }
+
+            // Trigger load
+            loadCompanies();
+        });
     }
 
     // Reset filters button
     const resetButton = document.getElementById('resetFilters');
     if (resetButton) {
         resetButton.addEventListener('click', function() {
-            document.getElementById('riskThreshold').value = 0.5;
-            document.getElementById('thresholdValue').textContent = '0.50';
-            document.getElementById('locationFilter').value = '';
-            document.getElementById('companySearch').value = '';
+            const slider = document.getElementById('riskThreshold');
+            const thresholdValue = document.getElementById('thresholdValue');
+            const locSelect = document.getElementById('locationFilter');
+            const searchInput = document.getElementById('companySearch');
+
+            if (slider) slider.value = 0.5;
+            if (thresholdValue) thresholdValue.textContent = '0.50';
+
+            // Clear multi-select properly
+            if (locSelect) {
+                for (let i = 0; i < locSelect.options.length; i++) {
+                    locSelect.options[i].selected = locSelect.options[i].value === '';
+                }
+            }
+
+            if (searchInput) searchInput.value = '';
+
             currentRiskThreshold = 0.5;
             currentLocations = [];
             loadCompanies();

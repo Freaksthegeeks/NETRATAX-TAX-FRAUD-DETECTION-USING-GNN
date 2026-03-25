@@ -1,197 +1,183 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NETRATAX - Analytics</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <style>
-        body {
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-            transition: background 0.3s ease;
-        }
-        
-        .page-header {
-            text-align: center;
-            margin-bottom: 3rem;
-            padding: 3rem 0 2rem;
-        }
-        
-        .page-header h2 {
-            font-size: clamp(2rem, 4vw, 3rem);
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-            font-weight: 700;
-            transition: color 0.3s ease;
-        }
-        
-        .page-header p {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            transition: color 0.3s ease;
-        }
-        
-        .analytics-stats, .charts-row, .chart-container, .info-panel {
-            background: var(--bg-card);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 30px var(--shadow);
-            border: 1px solid var(--border-color);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-            color: var(--text-primary);
-        }
-        
-        .chart-container:hover, .info-panel:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px var(--shadow);
-        }
-        
-        .charts-row {
-            max-width: 100%;
-            width: 100%;
-        }
-        
-        .analytics-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        .stat-card {
-            text-align: center;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, var(--forsythia), var(--deep-saffron));
-            border-radius: 15px;
-            color: var(--white);
-        }
-        
-        .stat-card h4 {
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            opacity: 0.9;
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #000000;
-        }
-        
-        .fade-in {
-            opacity: 0;
-            animation: fadeIn 0.8s ease forwards;
-        }
-        
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-    </style>
-    </head>
-<body data-theme="light">
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <div class="navbar-brand">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="NETRATAX Logo" class="navbar-logo">
-                <h1>NETRATAX</h1>
-            </div>
-            <ul class="navbar-menu">
-                <li><a href="/landing" class="nav-link">Home</a></li>
-                <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
-                <li><a href="/companies" class="nav-link">Companies</a></li>
-                <li><a href="/analytics" class="nav-link active">Analytics</a></li>
-                <li><a href="/upload" class="nav-link">Upload</a></li>
-                <li><a href="/chatbot" class="nav-link">Chatbox</a></li>
-            </ul>
-            <div class="nav-actions">
-                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                    <span class="theme-icon-light">☀️</span>
-                    <span class="theme-icon-dark">🌙</span>
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="container">
-        <!-- Page Header -->
-        <div class="page-header fade-in">
-            <h2>Network Analytics</h2>
-            <p>Transaction network analysis and pattern detection powered by Graph Neural Networks</p>
-        </div>
-
-        <!-- Key Statistics -->
-        <div class="analytics-stats fade-in" style="animation-delay: 0.2s;">
-            <div class="stat-card">
-                <h4>Total Nodes</h4>
-                <p class="stat-number" id="totalNodes">-</p>
-            </div>
-            <div class="stat-card">
-                <h4>Total Edges</h4>
-                <p class="stat-number" id="totalEdges">-</p>
-            </div>
-            <div class="stat-card">
-                <h4>Network Density</h4>
-                <p class="stat-number" id="networkDensity">-</p>
-            </div>
-            <div class="stat-card">
-                <h4>Avg. Fraud Prob.</h4>
-                <p class="stat-number" id="avgFraudProb">-</p>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="charts-row fade-in" style="animation-delay: 0.3s; grid-template-columns: minmax(600px, 1fr) minmax(600px, 1fr); gap: 2rem; max-width: 100%;">
-            <div class="chart-container" style="min-height: 700px; padding: 2rem; width: 100%; max-width: none;">
-                <h3 style="color: var(--text-primary); transition: color 0.3s ease; margin-bottom: 1.5rem;">Top 10 Invoice Senders</h3>
-                <div id="topSendersChart" style="height: 650px; width: 100%;"></div>
-            </div>
-
-            <div class="chart-container" style="min-height: 700px; padding: 2rem; width: 100%; max-width: none;">
-                <h3 style="color: var(--text-primary); transition: color 0.3s ease; margin-bottom: 1.5rem;">Top 10 Invoice Receivers</h3>
-                <div id="topReceiversChart" style="height: 650px; width: 100%;"></div>
-            </div>
-        </div>
-
-
-        <!-- Information Panel -->
-        <div class="info-panel fade-in" style="animation-delay: 0.5s;">
-            <h3 style="color: var(--text-primary); transition: color 0.3s ease;">About GNN-Based Fraud Detection</h3>
-            <div class="info-content">
-                <p style="color: var(--text-primary); transition: color 0.3s ease;">
-                    <strong>How the Model Works:</strong>
-                </p>
-                <ul style="color: var(--text-primary); transition: color 0.3s ease;">
-                    <li><strong>Node Features:</strong> Company turnover, invoice sent/received counts</li>
-                    <li><strong>Edge Features:</strong> Invoice amounts, ITC claimed</li>
-                    <li><strong>Architecture:</strong> Graph Convolutional Network (3 layers)</li>
-                    <li><strong>Detection:</strong> Identifies anomalous patterns in transaction networks</li>
-                </ul>
-
-                <p style="color: var(--text-primary); transition: color 0.3s ease;">
-                    <strong>Fraud Patterns Detected:</strong>
-                </p>
-                <ul style="color: var(--text-primary); transition: color 0.3s ease;">
-                    <li>Shell company networks (rapid creation/dissolution)</li>
-                    <li>Circular invoice chains (money laundering)</li>
-                    <li>Disproportionate ITC claims</li>
-                    <li>Unusual transaction patterns</li>
-                    <li>Connected fraud rings</li>
-                </ul>
-            </div>
-        </div>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analytics — Run & Monitor Jobs</title>
+  <style>
+    :root{--bg:#f6f9fb;--card:#fff;--muted:#6b7280;--accent:#0b63b0;--danger:#9f1239}
+    body{font-family:Inter,Segoe UI,Arial;background:var(--bg);color:#07203a;margin:0;padding:24px}
+    .wrap{max-width:1200px;margin:0 auto}
+    .card{background:var(--card);padding:18px;border-radius:10px;box-shadow:0 6px 20px rgba(11,37,69,0.06);margin-bottom:16px}
+    h1{margin:0 0 12px 0;font-size:20px}
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+    button{background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button.secondary{background:#6c7a89}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #eef2f6;text-align:left;font-size:13px}
+    .badge{display:inline-block;padding:4px 8px;border-radius:6px;font-size:12px}
+    .running{background:#fff3bf;color:#92400e}
+    .completed{background:#dcfce7;color:#166534}
+    .failed{background:#fee2e2;color:var(--danger)}
+    .small{font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .panel-list{max-height:320px;overflow:auto;padding-right:6px}
+    pre{background:#0b1220;color:#cfe8ff;padding:10px;border-radius:6px;overflow:auto}
+    code{font-family:monospace}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Analytics — Run & Monitor Jobs</h1>
+      <div class="controls">
+        <button id="runBtn">Run Analytics</button>
+        <button id="refreshBtn" class="secondary">Refresh Jobs</button>
+        <button id="refreshResults" class="secondary">Refresh Results</button>
+        <div class="small">Tip: Start a job and it runs in background. Results persisted to DB.</div>
+      </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <p>&copy; 2025 Tax Fraud Detection System | Powered by NETRATAX | Graph Neural Networks</p>
-    </footer>
+    <div class="card">
+      <h3 style="margin-top:0">Jobs</h3>
+      <table>
+        <thead><tr><th>Job ID</th><th>Status</th><th>Started</th><th>Finished</th><th>Error</th></tr></thead>
+        <tbody id="jobsBody"><tr><td colspan="5" class="small">No jobs yet.</td></tr></tbody>
+      </table>
+    </div>
 
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+    <div class="grid">
+      <div class="card">
+        <h4 style="margin-top:0">Top PageRank (Top 10)</h4>
+        <div id="pagerankArea" class="panel-list small">Run analytics and click "Refresh Results".</div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-top:0">Communities (samples)</h4>
+        <div id="communitiesArea" class="panel-list small">Communities will appear here after analytics completes.</div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-top:0">Top 10 Invoice Senders</h4>
+        <div id="topSendersArea" class="panel-list small">Loading...</div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-top:0">Top 10 Invoice Receivers</h4>
+        <div id="topReceiversArea" class="panel-list small">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const runBtn = document.getElementById('runBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshResultsBtn = document.getElementById('refreshResults');
+    const jobsBody = document.getElementById('jobsBody');
+    const pagerankArea = document.getElementById('pagerankArea');
+    const communitiesArea = document.getElementById('communitiesArea');
+    const topSendersArea = document.getElementById('topSendersArea');
+    const topReceiversArea = document.getElementById('topReceiversArea');
+
+    async function api(path, opts){
+      const res = await fetch(path, opts);
+      if(!res.ok){
+        const txt = await res.text();
+        throw new Error(txt || res.statusText);
+      }
+      return res.json();
+    }
+
+    runBtn.onclick = async ()=>{
+      runBtn.disabled = true; runBtn.textContent = 'Starting...';
+      try{
+        await api('/api/analytics/run', {method:'POST'});
+        pollJobs();
+      }catch(err){
+        alert('Failed to start job: '+err.message);
+      }finally{ runBtn.disabled=false; runBtn.textContent='Run Analytics'}
+    };
+
+    refreshBtn.onclick = pollJobs;
+    refreshResultsBtn.onclick = fetchResults;
+
+    let pollInterval = null;
+
+    async function pollJobs(){
+      try{
+        const jobs = await api('/api/analytics/jobs');
+        renderJobs(jobs);
+        const running = Object.values(jobs).some(j=>j.status==='running');
+        if(running && !pollInterval){ pollInterval = setInterval(pollJobs,5000); }
+        else if(!running && pollInterval){ clearInterval(pollInterval); pollInterval=null; }
+      }catch(err){ console.error(err); }
+    }
+
+    function renderJobs(jobs){
+      jobsBody.innerHTML='';
+      const ids = Object.keys(jobs).sort((a,b)=> jobs[b].started_at - jobs[a].started_at);
+      if(ids.length===0){ jobsBody.innerHTML='<tr><td colspan="5" class="small">No jobs yet.</td></tr>'; return; }
+      for(const id of ids){
+        const j = jobs[id];
+        const tr = document.createElement('tr');
+        const started = j.started_at ? new Date(j.started_at*1000).toLocaleString() : '';
+        const finished = j.finished_at ? new Date(j.finished_at*1000).toLocaleString() : '';
+        const statusClass = j.status==='running' ? 'running' : (j.status==='completed'?'completed':'failed');
+        tr.innerHTML = `<td><code style="font-size:12px">${id}</code></td>
+                        <td><span class="badge ${statusClass}">${j.status}</span></td>
+                        <td class="small">${started}</td>
+                        <td class="small">${finished}</td>
+                        <td class="small">${j.error || ''}</td>`;
+        jobsBody.appendChild(tr);
+      }
+    }
+
+    async function fetchResults(){
+      try{
+        pagerankArea.innerHTML='Loading...';
+        communitiesArea.innerHTML='Loading...';
+        topSendersArea.innerHTML='Loading...';
+        topReceiversArea.innerHTML='Loading...';
+
+        const [pr, comm, senders, receivers] = await Promise.all([
+          api('/api/analytics/top_pagerank?limit=10'),
+          api('/api/analytics/communities?min_size=4'),
+          api('/api/top_senders_table'),
+          api('/api/top_receivers_table')
+        ]);
+
+        // PageRank
+        if(pr && pr.length){
+          pagerankArea.innerHTML = pr.map((r,i)=>`<div><strong>${i+1}.</strong> ${r.gstin || r.name || ''} <span class="small">${r.name?(' - '+r.name):''}</span> — PR: ${Number(r.pagerank||0).toFixed(4)} ${r.is_fraud?'<span class="badge failed">FRAUD</span>':''}</div>`).join('');
+        } else pagerankArea.innerHTML = '<div class="small">No PageRank results found.</div>';
+
+        // Communities
+        if(comm && comm.length){
+          communitiesArea.innerHTML = comm.map(c=>`<div><strong>Community ${c.community_id}</strong> — ${c.size} members<br><small>Samples: ${ (c.sample_members||[]).slice(0,8).join(', ') }</small></div>`).join('<hr>');
+        } else communitiesArea.innerHTML = '<div class="small">No communities found.</div>';
+
+        // Top senders
+        if(senders && senders.length){
+          topSendersArea.innerHTML = senders.map((s,i)=>`<div><strong>${i+1}.</strong> ${s.company_id} — ${s.invoice_count} invoices <span class="small">(${s.fraud_probability})</span></div>`).join('');
+        } else topSendersArea.innerHTML = '<div class="small">No sender data.</div>';
+
+        // Top receivers
+        if(receivers && receivers.length){
+          topReceiversArea.innerHTML = receivers.map((s,i)=>`<div><strong>${i+1}.</strong> ${s.company_id} — ${s.invoice_count} invoices <span class="small">(${s.fraud_probability})</span></div>`).join('');
+        } else topReceiversArea.innerHTML = '<div class="small">No receiver data.</div>';
+
+      }catch(err){
+        pagerankArea.innerHTML = `<pre>${err.message}</pre>`;
+        communitiesArea.innerHTML = `<pre>${err.message}</pre>`;
+        topSendersArea.innerHTML = `<pre>${err.message}</pre>`;
+        topReceiversArea.innerHTML = `<pre>${err.message}</pre>`;
+      }
+    }
+
+    // Initial load
+    pollJobs();
+    fetchResults();
+  </script>
 </body>
 </html>
